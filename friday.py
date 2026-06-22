@@ -5,8 +5,7 @@ from langchain_ollama import ChatOllama
 from langchain_experimental.utilities import PythonREPL
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
-from langchain.tools import Tool
-
+from langchain_core.tools import Tool
 # --- NEW LANGCHAIN 1.0 IMPORTS ---
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
