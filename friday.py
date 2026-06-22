@@ -1,5 +1,5 @@
-import random
 import time
+import random
 import pyttsx3
 import speech_recognition as sr
 from langchain_ollama import ChatOllama
@@ -7,9 +7,15 @@ from langchain_experimental.utilities import PythonREPL
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from langchain_core.tools import Tool
-# --- NEW LANGCHAIN 1.0 IMPORTS ---
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
+
+# --- NEW: TERMINAL UI ENGINE ---
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+
+console = Console()
 
 # --- 1. INITIALIZE VOICE ENGINE (TTS) ---
 engine = pyttsx3.init()
@@ -28,7 +34,8 @@ if not voice_found and len(voices) > 1:
 engine.setProperty('rate', 175)
 
 def speak(text):
-    print(f"\nFRIDAY: {text}")
+    # Visually render FRIDAY's response in a glowing panel
+    console.print(Panel(text, title="[bold cyan]F.R.I.D.A.Y.[/bold cyan]", border_style="cyan", padding=(1, 2)))
     engine.say(text)
     engine.runAndWait()
 
@@ -38,22 +45,23 @@ mic = sr.Microphone()
 
 def listen():
     with mic as source:
-        print("\n[Listening...]")
+        console.print("[dim italic]Listening for audio signature...[/dim italic]")
         recognizer.adjust_for_ambient_noise(source, duration=0.5)
         audio = recognizer.listen(source)
     try:
-        print("[Processing speech...]")
+        console.print("[dim magenta]Processing audio frame...[/dim magenta]")
         query = recognizer.recognize_google(audio)
-        print(f"You said: {query}")
+        # Visually render your input in a clean green format
+        console.print(f"[bold green]User:[/bold green] {query}")
         return query
     except sr.UnknownValueError:
         return None
     except sr.RequestError:
-        print("Network error with speech recognition.")
+        console.print("[bold red][ERROR] Network connection to audio server lost.[/bold red]")
         return None
 
 # --- 3. CONFIGURE FRIDAY'S BRAIN & TOOLS ---
-speak("Initializing systems. Connecting to local core.")
+console.print(Panel("[bold yellow]INITIALIZING CORE SYSTEMS...[/bold yellow]", border_style="yellow"))
 
 llm = ChatOllama(model="qwen2.5:7b", temperature=0.2)
 
@@ -66,8 +74,7 @@ python_tool = Tool(
 )
 tools = [wikipedia, python_tool]
 
-# --- 4. THE NEW LANGCHAIN 1.0 AGENT ---
-# We no longer need long ReAct prompts! We just set a system prompt and a checkpointer for memory.
+# --- 4. THE LANGCHAIN AGENT ---
 memory = InMemorySaver()
 system_prompt = "You are FRIDAY, a superhuman scientist assistant. You are analytical, brilliant, and concise. You MUST use your tools to accurately answer questions or execute calculations."
 
@@ -77,31 +84,61 @@ agent = create_agent(
     system_prompt=system_prompt,
     checkpointer=memory
 )
-
-# Create a session ID so she remembers the conversation history across interactions
 config = {"configurable": {"thread_id": "friday_session_1"}}
 
-speak("FRIDAY is fully online. Systems operational.")
-
+speak("Systems online. Good morning.")
 
 # --- 5. THE MAIN VOICE LOOP ---
 while True:
-    user_input = listen()
+    accumulated_input = ""
+    
+    while True:
+        chunk = listen()
+        
+        if not chunk:
+            continue
+            
+        if "exit" in chunk.lower() or "quit" in chunk.lower():
+            speak("Shutting down core processors. Goodbye.")
+            exit()
+        
+        accumulated_input += chunk + ". "
+        console.print(f"[dim yellow]Drafting query: {accumulated_input}[/dim yellow]")
+        
+        time.sleep(1)
+        
+        engine.say("Are you done speaking?")
+        engine.runAndWait()
+        
+        confirmation = listen()
+        
+        if confirmation:
+            conf_lower = confirmation.lower()
+            if any(word in conf_lower for word in ["yes", "yeah", "done", "yep", "proceed", "i am done"]):
+                break 
+            
+            elif any(word in conf_lower for word in ["no", "not yet", "wait", "hold on"]):
+                engine.say("Okay, go ahead. I am listening.")
+                engine.runAndWait()
+                continue 
+            
+            else:
+                engine.say("I didn't catch a clear yes or no, but I will process what I have.")
+                engine.runAndWait()
+                break
+        else:
+            engine.say("I didn't hear a confirmation. Processing now.")
+            engine.runAndWait()
+            break
+            
+    user_input = accumulated_input.strip()
     
     if not user_input:
         continue
         
-    if "exit" in user_input.lower() or "quit" in user_input.lower():
-        speak("Shutting down systems. Goodbye.")
-        break
-    
-    # NEW: Instant Acknowledgement
-    acknowledgements = ["Processing.", "Right away.", "Calculating.", "Just a moment."]
-    print(f"\n[You]: {user_input}")
-    
-    # Speak the acknowledgement instantly without the "FRIDAY:" print tag
-    engine.say(random.choice(acknowledgements))
-    engine.runAndWait() 
+    console.print("\n[bold cyan blink]FRIDAY is compiling data...[/bold cyan blink]")
+    engine.say(random.choice(["Processing.", "Right away.", "Calculating.", "Just a moment."]))
+    engine.runAndWait()
     
     try:
         response = agent.invoke(
@@ -112,5 +149,5 @@ while True:
         speak(final_answer)
         
     except Exception as e:
-        print(f"Error executing command: {e}")
-        speak("I encountered an error processing that request.")
+        console.print(f"[bold red]CRITICAL ERROR:[/bold red] {e}")
+        speak("I encountered a system failure while processing that request.")
