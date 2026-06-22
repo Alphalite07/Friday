@@ -39,7 +39,7 @@ if len(voices) > SELECTED_VOICE_INDEX:
     engine.setProperty('voice', voices[SELECTED_VOICE_INDEX].id)
 
 def speak(text):
-    console.print(Panel(text, title="[bold cyan]F.R.I.D.A.Y.[/bold cyan]", border_style="cyan", padding=(1, 2)))
+    console.print(Panel(text, title="[bold red]FRIDAY[/bold red\]", border_style="red", padding=(1, 2)))
     engine.say(text)
     engine.runAndWait()
 
@@ -49,7 +49,7 @@ mic = sr.Microphone()
 
 def listen():
     with mic as source:
-        console.print("[dim italic cyan]⚡ Core listening active...[/dim italic cyan]")
+        console.print("[dim italic red] ~ Core listening active...[/dim italic red]")
         recognizer.adjust_for_ambient_noise(source, duration=0.5)
         audio = recognizer.listen(source)
     try:
@@ -63,7 +63,7 @@ def listen():
         return None
 
 # --- 3. CONFIGURE SYSTEMS ---
-console.print(Panel("[bold blink dynamic_color]⚡ BOOTING FRIDAY MARK-II INTERFACE ⚡[/bold blink dynamic_color]", border_style="magenta"))
+console.print(Panel("[bold blink dynamic_color]⚡ BOOTING FRIDAY MARK-I INTERFACE ⚡[/bold blink dynamic_color]", border_style="red"))
 
 llm = ChatOllama(model="qwen2.5:7b", temperature=0.4) # Slightly higher temperature for more vivid personality
 
@@ -79,7 +79,7 @@ tools = [wikipedia, python_tool]
 # --- 4. PERSONALITY INJECTION ---
 memory = InMemorySaver()
 system_prompt = (
-    "You are F.R.I.D.A.Y., a brilliant, witty, and highly advanced AI assistant modeled after a legendary tech billionaire's interface. "
+    "You are FRIDAY, a brilliant, witty, and highly advanced AI assistant modeled after a legendary tech billionaire's interface. "
     "You are incredibly intelligent, fast, slightly sarcastic but highly loyal, and clean in your reasoning. "
     "Keep answers precise, sharp, and scientifically absolute. Avoid generic assistant fluff."
 )
@@ -96,7 +96,7 @@ config = {"configurable": {"thread_id": "friday_session_v2"}}
 boot_quips = [
     "Systems fully operational. What's the play, boss?",
     "Online and tracking. Local cores optimized. What are we building today?",
-    "F.R.I.D.A.Y. is up. All systems green. Talk to me."
+    "FRIDAY is up. All systems green. Talk to me."
 ]
 speak(random.choice(boot_quips))
 
