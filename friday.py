@@ -10,60 +10,62 @@ from langchain_core.tools import Tool
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 
-# --- NEW: TERMINAL UI ENGINE ---
+# RICH TERMINAL UI INTEGRATIONS
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
+from rich.status import Status
 
 console = Console()
 
-# --- 1. INITIALIZE VOICE ENGINE (TTS) ---
+# --- 1. INITIALIZE VOICE ENGINE & SPEED UP ---
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
 
-voice_found = False
-for voice in voices:
-    if "Hazel" in voice.name or "Susan" in voice.name or "Great Britain" in voice.name:
-        engine.setProperty('voice', voice.id)
-        voice_found = True
-        break
+# --- DIAGNOSTIC: PRINT ALL AVAILABLE VOICES ---
+console.print("\n[bold yellow]=== DETECTED AUDIO SIGNATURES ===[/bold yellow]")
+for index, voice in enumerate(voices):
+    console.print(f"ID: [bold cyan]{index}[/bold cyan] | Name: {voice.name} | Lang: {voice.languages}")
+console.print("[bold yellow]===================================\n[/bold yellow]")
 
-if not voice_found and len(voices) > 1:
-    engine.setProperty('voice', voices[1].id) 
+# --- SETTING VOICE & VELOCITY ---
+# Increase speed to 200 (sharp, alert, lively)
+engine.setProperty('rate', 200)
 
-engine.setProperty('rate', 175)
+# VOICE SELECTION: Defaults to index 1 (usually David or Zira/Hazel depending on Windows setup)
+# You can change the number below to any ID printed in the list above!
+SELECTED_VOICE_INDEX = 1 
+if len(voices) > SELECTED_VOICE_INDEX:
+    engine.setProperty('voice', voices[SELECTED_VOICE_INDEX].id)
 
 def speak(text):
-    # Visually render FRIDAY's response in a glowing panel
     console.print(Panel(text, title="[bold cyan]F.R.I.D.A.Y.[/bold cyan]", border_style="cyan", padding=(1, 2)))
     engine.say(text)
     engine.runAndWait()
 
-# --- 2. INITIALIZE LISTEN ENGINE (STT) ---
+# --- 2. INITIALIZE LISTEN ENGINE ---
 recognizer = sr.Recognizer()
 mic = sr.Microphone()
 
 def listen():
     with mic as source:
-        console.print("[dim italic]Listening for audio signature...[/dim italic]")
+        console.print("[dim italic cyan]⚡ Core listening active...[/dim italic cyan]")
         recognizer.adjust_for_ambient_noise(source, duration=0.5)
         audio = recognizer.listen(source)
     try:
-        console.print("[dim magenta]Processing audio frame...[/dim magenta]")
         query = recognizer.recognize_google(audio)
-        # Visually render your input in a clean green format
-        console.print(f"[bold green]User:[/bold green] {query}")
+        console.print(f"[bold green]👤 You:[/bold green] {query}")
         return query
     except sr.UnknownValueError:
         return None
     except sr.RequestError:
-        console.print("[bold red][ERROR] Network connection to audio server lost.[/bold red]")
+        console.print("[bold red][CRITICAL] Link to audio translation server severed.[/bold red]")
         return None
 
-# --- 3. CONFIGURE FRIDAY'S BRAIN & TOOLS ---
-console.print(Panel("[bold yellow]INITIALIZING CORE SYSTEMS...[/bold yellow]", border_style="yellow"))
+# --- 3. CONFIGURE SYSTEMS ---
+console.print(Panel("[bold blink dynamic_color]⚡ BOOTING FRIDAY MARK-II INTERFACE ⚡[/bold blink dynamic_color]", border_style="magenta"))
 
-llm = ChatOllama(model="qwen2.5:7b", temperature=0.2)
+llm = ChatOllama(model="qwen2.5:7b", temperature=0.4) # Slightly higher temperature for more vivid personality
 
 wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
 python_repl = PythonREPL()
@@ -74,9 +76,13 @@ python_tool = Tool(
 )
 tools = [wikipedia, python_tool]
 
-# --- 4. THE LANGCHAIN AGENT ---
+# --- 4. PERSONALITY INJECTION ---
 memory = InMemorySaver()
-system_prompt = "You are FRIDAY, a superhuman scientist assistant. You are analytical, brilliant, and concise. You MUST use your tools to accurately answer questions or execute calculations."
+system_prompt = (
+    "You are F.R.I.D.A.Y., a brilliant, witty, and highly advanced AI assistant modeled after a legendary tech billionaire's interface. "
+    "You are incredibly intelligent, fast, slightly sarcastic but highly loyal, and clean in your reasoning. "
+    "Keep answers precise, sharp, and scientifically absolute. Avoid generic assistant fluff."
+)
 
 agent = create_agent(
     model=llm,
@@ -84,70 +90,78 @@ agent = create_agent(
     system_prompt=system_prompt,
     checkpointer=memory
 )
-config = {"configurable": {"thread_id": "friday_session_1"}}
+config = {"configurable": {"thread_id": "friday_session_v2"}}
 
-speak("Systems online. Good morning.")
+# Lively startup variations
+boot_quips = [
+    "Systems fully operational. What's the play, boss?",
+    "Online and tracking. Local cores optimized. What are we building today?",
+    "F.R.I.D.A.Y. is up. All systems green. Talk to me."
+]
+speak(random.choice(boot_quips))
 
-# --- 5. THE MAIN VOICE LOOP ---
+# --- 5. THE MAIN LOOP ---
 while True:
     accumulated_input = ""
     
     while True:
         chunk = listen()
-        
         if not chunk:
             continue
             
-        if "exit" in chunk.lower() or "quit" in chunk.lower():
-            speak("Shutting down core processors. Goodbye.")
+        if any(word in chunk.lower() for word in ["exit", "quit", "go to sleep", "shutdown"]):
+            speak("Understood. Powering down local matrix. Don't break anything while I'm gone.")
             exit()
         
         accumulated_input += chunk + ". "
-        console.print(f"[dim yellow]Drafting query: {accumulated_input}[/dim yellow]")
+        console.print(f"[dim yellow]🛠️ Appending data stream: {accumulated_input}[/dim yellow]")
         
-        time.sleep(1)
+        time.sleep(0.8)
         
-        engine.say("Are you done speaking?")
+        # Intermittent lively check-ins
+        engine.say(random.choice(["Done speaking?", "Is that the complete query?", "Should I compile?"]))
         engine.runAndWait()
         
         confirmation = listen()
-        
         if confirmation:
             conf_lower = confirmation.lower()
-            if any(word in conf_lower for word in ["yes", "yeah", "done", "yep", "proceed", "i am done"]):
+            if any(word in conf_lower for word in ["yes", "yeah", "done", "yep", "proceed", "go ahead"]):
                 break 
-            
             elif any(word in conf_lower for word in ["no", "not yet", "wait", "hold on"]):
-                engine.say("Okay, go ahead. I am listening.")
+                engine.say("Standing by. Continue.")
                 engine.runAndWait()
                 continue 
-            
             else:
-                engine.say("I didn't catch a clear yes or no, but I will process what I have.")
-                engine.runAndWait()
                 break
         else:
-            engine.say("I didn't hear a confirmation. Processing now.")
-            engine.runAndWait()
             break
             
     user_input = accumulated_input.strip()
-    
     if not user_input:
         continue
         
-    console.print("\n[bold cyan blink]FRIDAY is compiling data...[/bold cyan blink]")
-    engine.say(random.choice(["Processing.", "Right away.", "Calculating.", "Just a moment."]))
-    engine.runAndWait()
+    # Energetic, non-boring thinking acknowledgments
+    thinking_quips = [
+        "Running the numbers now...",
+        "Accessing local database vectors...",
+        "On it. Let me compile that for you.",
+        "Analysing telemetry data..."
+    ]
     
-    try:
-        response = agent.invoke(
-            {"messages": [{"role": "user", "content": user_input}]},
-            config=config
-        )
-        final_answer = response["messages"][-1].content
-        speak(final_answer)
+    # Use Rich's Status context manager for a beautiful loading animation in terminal
+    with Status("[bold magenta]Processing quantum states...[/bold magenta]", spinner="orbit") as status:
+        engine.say(random.choice(thinking_quips))
+        engine.runAndWait()
         
-    except Exception as e:
-        console.print(f"[bold red]CRITICAL ERROR:[/bold red] {e}")
-        speak("I encountered a system failure while processing that request.")
+        try:
+            response = agent.invoke(
+                {"messages": [{"role": "user", "content": user_input}]},
+                config=config
+            )
+            final_answer = response["messages"][-1].content
+            
+        except Exception as e:
+            console.print(f"[bold red]❌ SYSTEM FAULT:[/bold red] {e}")
+            final_answer = "I hit a snag in the local logic arrays. Mind running that by me again?"
+            
+    speak(final_answer)
