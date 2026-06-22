@@ -1,3 +1,4 @@
+import random
 import time
 import pyttsx3
 import speech_recognition as sr
@@ -82,6 +83,7 @@ config = {"configurable": {"thread_id": "friday_session_1"}}
 
 speak("FRIDAY is fully online. Systems operational.")
 
+
 # --- 5. THE MAIN VOICE LOOP ---
 while True:
     user_input = listen()
@@ -92,18 +94,21 @@ while True:
     if "exit" in user_input.lower() or "quit" in user_input.lower():
         speak("Shutting down systems. Goodbye.")
         break
-        
-    print("\nFRIDAY is calculating...")
+    
+    # NEW: Instant Acknowledgement
+    acknowledgements = ["Processing.", "Right away.", "Calculating.", "Just a moment."]
+    print(f"\n[You]: {user_input}")
+    
+    # Speak the acknowledgement instantly without the "FRIDAY:" print tag
+    engine.say(random.choice(acknowledgements))
+    engine.runAndWait() 
+    
     try:
-        # The new invoke syntax automatically manages memory via the config thread!
         response = agent.invoke(
             {"messages": [{"role": "user", "content": user_input}]},
             config=config
         )
-        
-        # The agent returns a dictionary of messages. The last one is FRIDAY's answer.
         final_answer = response["messages"][-1].content
-        
         speak(final_answer)
         
     except Exception as e:
