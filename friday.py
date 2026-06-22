@@ -149,7 +149,7 @@ while True:
     ]
     
     # Use Rich's Status context manager for a beautiful loading animation in terminal
-    with Status("[bold magenta]Processing quantum states...[/bold magenta]", spinner="orbit") as status:
+    with Status("[bold magenta]Processing quantum states...[/bold magenta]", spinner="dots") as status:
         engine.say(random.choice(thinking_quips))
         engine.runAndWait()
         
