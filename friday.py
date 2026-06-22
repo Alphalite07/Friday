@@ -12,9 +12,19 @@ from langchain.tools import Tool
 # --- 1. INITIALIZE VOICE ENGINE (TTS) ---
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
-# Optional: Look for a female voice for FRIDAY, default to index 1 or 0 if not found
-if len(voices) > 1:
+
+# Hunt for the Windows British female voice (Hazel or Susan)
+voice_found = False
+for voice in voices:
+    if "Hazel" in voice.name or "Susan" in voice.name or "Great Britain" in voice.name:
+        engine.setProperty('voice', voice.id)
+        voice_found = True
+        break
+
+# Fallback just in case the British voice isn't installed
+if not voice_found and len(voices) > 1:
     engine.setProperty('voice', voices[1].id) 
+
 engine.setProperty('rate', 175)  # Speaking speed
 
 def speak(text):
