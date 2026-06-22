@@ -39,7 +39,7 @@ if len(voices) > SELECTED_VOICE_INDEX:
     engine.setProperty('voice', voices[SELECTED_VOICE_INDEX].id)
 
 def speak(text):
-    console.print(Panel(text, title="[bold red]FRIDAY[/bold red\]", border_style="red", padding=(1, 2)))
+    console.print(Panel(text, title="[bold red]FRIDAY[/bold red]", border_style="red", padding=(1, 2)))
     engine.say(text)
     engine.runAndWait()
 
